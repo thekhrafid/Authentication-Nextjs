@@ -1,27 +1,27 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-// const isProtectedRoute = createRouteMatcher(["/user-profile"])
 const isPublicRoute = createRouteMatcher(["/", "/signin(.*)", "/signup(.*)"]);
-
-
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
+
 export default clerkMiddleware(async (auth, req) => {
-  const { userId, redirectToSignIn } = await auth();
-  if (
-    isAdminRoute(req) &&
-    (await auth()).sessionClaims?.metadata?.role !== "admin"
-  ) {
+  const { userId, redirectToSignIn, sessionClaims } = await auth();
+
+  // TypeScript-safe: explicitly tell TS what metadata contains
+  const roleInSession = (sessionClaims?.metadata as { role?: string })?.role;
+
+  // Admin route protection
+  if (isAdminRoute(req) && roleInSession !== "admin") {
     const url = new URL("/", req.url);
     return NextResponse.redirect(url);
   }
 
+  // Public route check
   if (!userId && !isPublicRoute(req)) {
-    // Add custom logic to run in redirecting
     return redirectToSignIn();
   }
-  // if(!isPublicRoute(req)) await auth.protect();
 });
+
 
 export const config = {
   matcher: [

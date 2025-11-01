@@ -1,42 +1,64 @@
 "use server";
 
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { Roles } from "../../../types/globals";
+import type { Roles } from "../../../types/globals";
 import { revalidatePath } from "next/cache";
 
+/**
+ * Set a user's role (admin only)
+ */
 export async function setRole(formData: FormData) {
   const { sessionClaims } = await auth();
 
-  if (sessionClaims?.metadata?.role !== "admin") {
+  // TypeScript-safe: explicitly tell TS what metadata contains
+  const roleInSession = (sessionClaims?.metadata as { role?: string })?.role;
+
+  if (roleInSession !== "admin") {
     throw new Error("Not Authorized");
   }
 
-  const client = clerkClient;
   const id = formData.get("id") as string;
   const role = formData.get("role") as Roles;
 
   try {
-    await client.users.updateUser(id, { publicMetadata: { role } });
+    // ⚡ Call clerkClient() to get the instance
+    const client = await clerkClient();
+
+    await client.users.updateUser(id, {
+      publicMetadata: { role },
+    });
+
     revalidatePath("/admin");
-  } catch {
+  } catch (error) {
+    console.error("❌ Failed to set role:", error);
     throw new Error("Failed to set role");
   }
 }
 
+/**
+ * Remove a user's role (admin only)
+ */
 export async function removeRole(formData: FormData) {
   const { sessionClaims } = await auth();
 
-  if (sessionClaims?.metadata?.role !== "admin") {
+  const roleInSession = (sessionClaims?.metadata as { role?: string })?.role;
+
+  if (roleInSession !== "admin") {
     throw new Error("Not Authorized");
   }
 
-  const client = clerkClient;
   const id = formData.get("id") as string;
 
   try {
-    await client.users.updateUser(id, { publicMetadata: { role: null } });
+    const client = await clerkClient();
+
+    await client.users.updateUser(id, {
+      publicMetadata: { role: null },
+    });
+
     revalidatePath("/admin");
-  } catch {
+  } catch (error) {
+    console.error("❌ Failed to remove role:", error);
     throw new Error("Failed to remove role");
   }
 }
