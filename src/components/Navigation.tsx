@@ -4,18 +4,17 @@ import {
   SignInButton,
   SignOutButton,
   SignUpButton,
-  UserButton,
 } from "@clerk/nextjs";
 import Link from "next/link";
 
 export const Navigation = () => {
   return (
     <>
-      <nav className="bg-[var(--background)] border-b border-[var(--foreground)]/10">
+      <nav className="bg-white border-b border-black">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            <div className="flex-shrink-0">
-              <h1 className="text-xl text-white font-semibold text-[var(--background)]">
+            <div className="shrink-0">
+              <h1 className="text-xl text-white font-semibold ">
                 Next.js app
               </h1>
             </div>
